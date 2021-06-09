@@ -8,14 +8,30 @@ const adminUser = require('../utilities/adminAuth');
 =================*/
 
 const adminUserModel = require('../models/adminUser');
+const galleryItemModel = require('../models/galleryItem');
 
-//cookies
+/*===============
+=====Cookies=====
+=================*/
 
 const Cookies = require('cookies');
 
-/*=============
-==Controller==
-===============*/
+/*===============
+==File handling==
+=================*/
+
+const fs = require('fs');
+
+/*===============
+==Path handling==
+=================*/
+
+const path = require('path');
+
+/*===============
+====Controller===
+=================*/
+
 const controller = {
   dashboard:{
     GET: async function(req, res){
@@ -55,8 +71,11 @@ const controller = {
         let user = new adminUser(cookies.get('id'), adminUserModel);
 
         if(await user.validate()){
+
+          const galleryItems = await galleryItemModel.find();
           res.render('adminViews/gallery',{
-            user:user.data
+            user:user.data,
+            galleryItems: galleryItems
           });
 
         }
@@ -73,13 +92,89 @@ const controller = {
 
         if(await user.validate()){
           //content here
+          res.redirect('/');
 
         }
         else res.render('adminViews/login');
       }catch(e){
         console.error(e);
       }
-    }
+    },
+      upload:{
+        POST: async function(req, res){
+          try{
+            const cookies = new Cookies(req, res);
+            let user = new adminUser(cookies.get('id'), adminUserModel);
+            let galleryItem = new galleryItemModel;
+
+
+
+            if(await user.validate()){
+              if(req.success){
+                galleryItem.category = req.body.category;
+                galleryItem.ext = req.upFileExt;
+                galleryItem =await galleryItem.save();
+
+                fs.rename(path.normalize(__dirname + `/../public/shared/galleryItems/${req.upFileName}.${req.upFileExt}`),
+                          path.normalize(__dirname + `/../public/shared/galleryItems/${galleryItem._id}.${req.upFileExt}`),
+                          (err)=>{
+                            if(err) console.log(err);
+                          });
+
+                res.redirect('/admin/gallery');
+            }else{
+              fs.unlinkSync(path.normalize(__dirname + `/../public/shared/galleryItems/Wrong`));
+              res.redirect('/admin/gallery');
+            }
+            }
+            else res.render('adminViews/login');
+          }catch(e){
+            console.log(e);
+          }
+        }
+      },
+      edit:{
+        POST: async function(req, res){
+          try{
+            const cookies = new Cookies(req, res);
+            let user = new adminUser(cookies.get('id'), adminUserModel);
+
+            if(await user.validate()){
+              let item = await galleryItemModel.findById(`${req.query.id}`);
+              item.category = req.body.category;
+              item.save()
+              .then(()=>{
+                res.redirect('/admin/gallery');
+              })
+
+            }
+            else res.render('adminViews/login');
+          }catch(e){
+            console.log(e);
+          }
+        }
+      },
+      delete:{
+        GET: async function(req, res){
+          try{
+            const cookies = new Cookies(req, res);
+            let user = new adminUser(cookies.get('id'), adminUserModel);
+
+            if(await user.validate()){
+              let item = await galleryItemModel.findById(`${req.query.id}`);
+              fs.unlinkSync(path.normalize(__dirname + `/../public/shared/galleryItems/${item._id}.${item.ext}`));
+              galleryItemModel.findByIdAndDelete(`${req.query.id}`)
+              .then(()=>{
+                res.redirect('/admin/gallery');
+              })
+
+            }
+            else res.render('adminViews/login');
+          }catch(e){
+            console.log(e);
+          }
+        }
+      }
   }
 }
 
