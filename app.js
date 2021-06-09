@@ -41,6 +41,7 @@ app.listen(27017, ()=>{
 
 app.set('view engine', 'ejs');
 app.use('/', express.static(path.normalize(__dirname + '/public/client')));
+app.use('/', express.static(path.normalize(__dirname + '/public/shared')));
 app.use('/admin', express.static(path.normalize(__dirname + '/public')));
 app.use(express.urlencoded({extended:true}));
 
