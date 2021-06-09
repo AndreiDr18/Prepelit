@@ -9,11 +9,15 @@ const controller = require(path.normalize(__dirname + '/../controllers/clientCon
 =====Routing=======
 ====================*/
 
-
+//GET
 router.get('/', controller.index.GET);
 router.get('/about', controller.about.GET);
 router.get('/gallery', controller.gallery.GET);
 router.get('/contact', controller.contact.GET);
 router.get('/shop', controller.shop.GET);
+
+//POST
+
+router.post('/contact', controller.contact.POST);
 
 module.exports = router;
